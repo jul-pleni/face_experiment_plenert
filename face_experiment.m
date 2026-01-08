@@ -1,13 +1,30 @@
-
+ 
 %% Homework - a full experiment
 
+% save results
+VP = 'VP02' ; % use this format 'VP01'
+
+timestamp = datestr(now, 'yyyymmdd_HHMMSS');
+resultsDir = fullfile(pwd, 'Results');
+if ~exist(resultsDir, 'dir')
+    mkdir(resultsDir);
+end
+
+baseName = sprintf('%s_%s', VP, timestamp);
+matFile  = fullfile(resultsDir, [baseName '.mat']);
+csvFile  = fullfile(resultsDir, [baseName '.csv']);
+
+% basis
 grey = [155 155 155];
 black = [0 0 0];
 
 white= [255 255 255];
 
 my_screen = 0;
-[my_window, rect] = Screen('OpenWindow', my_screen, grey, [0 0 700 700]);
+%[my_window, rect] = Screen('OpenWindow', my_screen, grey, [0 0 700 700]);
+PsychDefaultSetup(2);
+Screen('Preference', 'SkipSyncTests', 1);
+[my_window, rect] = Screen('OpenWindow', my_screen, grey);
 
 device = -1;
 
@@ -26,13 +43,13 @@ if ~exist(imgFolder, 'dir')
     error('Bildordner nicht gefunden: %s', imgFolder);
 end
 
-n_trials = 5;
-
+n_trial s = 50 ;
+ 
 % Bilddateien sammeln
 exts  = {'*.png','*.jpg','*.jpeg','*.bmp','*.tif','*.tiff'};
 files = [];
 for i = 1:numel(exts)
-    files = [files; dir(fullfile(imgFolder, exts{i}))]; %#ok<AGROW>
+    files = [files; dir(fullfile(imgFolder, exts{i}))]; 
 end
 
 if isempty(files)
@@ -176,5 +193,34 @@ end
 
 KbQueueStop(device);
 KbQueueRelease(device);
-      
+
+end_text = ['Thank you for your participation!\n\nPress any key to exit.'];
+
+Screen('FillRect', my_window, grey);
+Screen('TextSize', my_window, 28);
+DrawFormattedText(my_window, end_text, 'center', 'center', black);
+Screen('Flip', my_window);
+
+KbReleaseWait(device);   % wartet bis alle Tasten losgelassen sind
+KbWait(device);          % wartet auf Tastendruck
+KbReleaseWait(device);
 Screen('CloseAll');
+
+% save results
+% mean RT
+meanRT = mean(RT, 'omitnan');   
+ 
+% Long Table
+T = table( ...
+    repmat(string(VP), n_trials, 1), ...
+    repmat(string(timestamp), n_trials, 1), ...
+    (1:n_trials)', ...
+    RT, ...
+    RESP, ...
+    repmat(meanRT, n_trials, 1), ...
+    'VariableNames', {'vp','timestamp','trial','rt','resp','mean_rt'});
+
+% save
+save(matFile, 'VP','timestamp','RT','RESP','meanRT','T','n_trials');
+writetable(T, csvFile);
+
